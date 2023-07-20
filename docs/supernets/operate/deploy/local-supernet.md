@@ -20,8 +20,6 @@ To initialize PolyBFT consensus, we need to generate the necessary secrets for e
 
 The `polygon-edge polybft-secrets` command is used to generate account secrets for validators. The command initializes private keys for the consensus client (validators + networking) to a Secrets Manager config file.
 
-**Keep in mind that this command is intended for testing purposes only and should not be used in a production environment.**
-
 <details>
 <summary>Flags ↓</summary>
 
@@ -95,7 +93,59 @@ Node ID              = 16Uiu2HAm42EFMhJPGcMRFHPaWWxBzoEsWRbGxJnBHMu4VFojg99U
 
 </details>
 
-### Understand the generated secrets
+:::info Example with AWS Secrets
+
+### Prerequisites
+
+1. You need to have [AWS CLI](https://aws.amazon.com/cli/) installed and configured on your machine.
+2. An [AWS SSO account](https://aws.amazon.com/iam/identity-center/) with the right permissions to access the SSM Parameter Store is required.
+
+### Step 1: AWS SSO Login
+
+The first step is to log in to your AWS SSO account. In your terminal, run the following command:
+
+```bash
+aws sso login
+```
+
+Follow the prompts to complete the login process.
+
+### Step 2: Create Config.json File
+
+Next, create a config.json file within your polygon-edge directory with the following contents:
+
+```json
+{
+  "Type": "aws-ssm",
+  "Name": "validator1",
+  "Extra": {
+    "region": "us-west-2",
+    "ssm-parameter-path": "/test" 
+  }
+} 
+```
+
+Ensure to replace the "Name" value with the name you wish to use for your validator, and the "ssm-parameter-path" with the path in AWS SSM Parameter Store where your parameters will be stored.
+
+### Step 3: Run the Secret Generation Command
+
+To generate the necessary secrets for your validator node, run the polybft-secrets command. In your terminal, input:
+
+```bash
+go run main.go polybft-secrets --config config.json
+```
+
+This will generate the secrets and store them in the AWS SSM Parameter Store as defined in your config.json file.
+
+### Step 4: Check Outputs in AWS SSM Parameter Store
+
+Check your AWS SSM Parameter Store to verify that the secrets have been generated successfully. This can be done via the AWS console.
+
+> Note: In this tutorial, the example shown generated the following secrets: network-key, validator-key, and validator-bls-key. Your output will also show the public key (address), BLS public key, and Node ID.
+
+:::
+
+### Understand the Generated Secrets
 
 The generated secrets include the following information for each validator node:
 
@@ -103,7 +153,7 @@ The generated secrets include the following information for each validator node:
 - **BLS Private and Public Keys**: These keys are used in the Byzantine fault-tolerant (BFT) consensus protocol to aggregate and verify signatures efficiently.
 - **P2P Networking Node ID**: This is a unique identifier for each validator node in the network, allowing them to establish and maintain connections with other nodes.
 
-> The secrets output can be retrieved again if needed by running the following command: `./polygon-edge polybft-secrets --data-dir test-chain-X/ --insecure`
+> The secrets output can be retrieved again if needed by running the following command: `./polygon-edge polybft-secrets --data-dir test-chain-X/`
 
 ## 2. Next Steps
 
